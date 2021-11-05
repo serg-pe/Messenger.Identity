@@ -48,12 +48,28 @@ namespace IdentityServer
                     .AddDefaultTokenProviders();
             }
 
-            services.AddControllers();
+            services.AddControllersWithViews();
 
-            services.AddIdentityServer()
+            services.AddIdentityServer(options => 
+            {
+                options.UserInteraction.LoginUrl = "/Auth/Login";
+                options.UserInteraction.LogoutUrl = "Auth/Logout";
+            })
+                .AddAspNetIdentity<AppUser>()
                 .AddDeveloperSigningCredential()
                 .AddInMemoryApiScopes(Config.ApiScopes)
-                .AddInMemoryClients(Config.Clients);
+                .AddInMemoryClients(Config.Clients)
+                .AddInMemoryIdentityResources(Config.IdentityResources);
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("default", policy =>
+                {
+                    policy.WithOrigins("http://localhost:3000"); // react_client URL
+                    policy.AllowAnyHeader();
+                    policy.AllowAnyMethod();
+                });
+            });
         }
 
         public void Configure(IApplicationBuilder app)
@@ -64,6 +80,8 @@ namespace IdentityServer
             }
 
             app.UseRouting();
+
+            app.UseCors("default");
 
             app.UseIdentityServer();
 
